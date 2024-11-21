@@ -108,7 +108,7 @@ def parrilla_generalized(x: list, z: list, xA: float, zA: float, xF: float, zF: 
 
         output['ki'].append(k)
         output['iter'] += 1
-        print(k)
+        #print(k)
         if np.all(np.abs(k - k0) <= tolerance):
             output['elapsed_time'] = time.time() - t0
             output['converged'] = True
