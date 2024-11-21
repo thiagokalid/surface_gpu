@@ -1,6 +1,7 @@
 import time
 import numpy as np
 
+__all__ = ["parrilla_2007", "parrilla_generalized"]
 
 def tof(k: int, x2: np.ndarray, z2: np.ndarray, x1: float, z1: float, c: float):
     Mk = (z2[k + 1] - z2[k]) / (x2[k + 1] - x2[k])
