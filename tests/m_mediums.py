@@ -4,25 +4,25 @@ import matplotlib
 import time
 
 from src.surface_gpu.methods import parrilla_generalized
-matplotlib.use("QtAgg")
+matplotlib.use("TkAgg")
 
 # Speed:
-c1 = 5.900
-c2 = 3.4
-c3 = 4.8
-c4 = 1.483
+c1 = 5.9
+c2 = 3.2
+c3 = 1.483
+c4 = 3.4
 
-xmin = -10
-xmax = 10
+xmin = -12
+xmax = 12
 xstep = 1e-2
 x = np.arange(xmin, xmax + xstep, xstep)
 
 # Emitters:
-xA, zA = 0, 0
+xA, zA = 2.5, 0
 
 # Focuses:
-xF = 4
-zF = 26
+xF = 2
+zF = 15
 
 # Profiles:
 x1 = x
@@ -40,15 +40,10 @@ z = [z1, z2, z3]
 c = [c1, c2, c3, c4]
 M = len(x)
 
-k, elapsed_time = parrilla_generalized(x, z, xA, zA, xF, zF, c, tolerance=4)
+result = parrilla_generalized(x, z, xA, zA, xF, zF, c, tolerance=4, maxiter=200)
 
-# Profiles:
-i = 0
-# Plot surfaces:
-for xi, zi in zip(x, z):
-    plt.plot(x[i], z[i], 'o-', color="b", alpha=.5, label=fr"$S_{i + 1}$. $k_{i}={k[i]}$", markersize=1)
-    plt.plot(x[i][k[i]], z[i][k[i]], '*', color="r")
-    i += 1
+k = result['result']
+elapsed_time = result['elapsed_time']
 
 # Plot rays:
 for i in range(M+1):
@@ -58,6 +53,12 @@ for i in range(M+1):
         plt.plot([xF, x[i-1][k[i-1]]], [zF, z[i-1][k[i-1]]], color='lime')
     else:
         plt.plot([x[i][k[i]], x[i-1][k[i-1]]], [z[i][k[i]], z[i-1][k[i-1]]], color='lime')
+
+# Plot surfaces:
+for i in range(M):
+    plt.plot(x[i], z[i], 'o-', color="b", alpha=.5, label=fr"$S_{i + 1}$. $k_{i}={k[i]}$", markersize=2)
+    plt.plot(x[i][k[i]], z[i][k[i]], '*', color="r")
+
 # Emitter:
 plt.plot(xA, zA, 'sk', label="Emitters")
 
@@ -69,5 +70,9 @@ plt.xlabel("x-axis in mm")
 plt.ylabel("z-axis in mm")
 plt.gca().set_aspect("equal")
 plt.grid()
-plt.title(f"Elapsed time = {elapsed_time * 1000:.2f} ms")
+if result["converged"]:
+    iterations = result["iter"]
+    plt.title(f"Converged with {iterations} iterations or {elapsed_time * 1000:.2f} ms")
+else:
+    plt.title("Has not converged.")
 plt.show()
