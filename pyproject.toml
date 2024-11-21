@@ -1,5 +1,5 @@
 [project]
-name = "surface-GPU"
+name = "surface_gpu"
 version = "0.1"
 dependencies = [
     "numpy~=1.26",
