@@ -25,7 +25,7 @@ def parrilla_2007(surface, focus, transmitter, c1, c2):
             k0 = int(k)
 
 
-def parrilla_generalized(x: list, z: list, xA: float, zA: float, xF: float, zF: float, c: list, tolerance: int=2):
+def parrilla_generalized(x: list, z: list, xA: float, zA: float, xF: float, zF: float, c: list, tolerance: int=2, maxiter: int=100):
     N = [len(xi) for xi in x]
     M = len(c)
     k0 = np.zeros(M-1, dtype=int)
@@ -33,8 +33,16 @@ def parrilla_generalized(x: list, z: list, xA: float, zA: float, xF: float, zF: 
     k = k0 + 1000
     elapsed_time = None
 
+    output = {
+        "ki": [],
+        "elapsed_time": -1,
+        "converged": False,
+        "result": None,
+        "iter": 0
+    }
+
     t0 = time.time()
-    for i in range(100):
+    for i in range(maxiter):
         for m in range(M-1):  # 0 1 2
             if m == 0:
                 p = k0[m]
@@ -97,11 +105,18 @@ def parrilla_generalized(x: list, z: list, xA: float, zA: float, xF: float, zF: 
         k = k0 - step
         k = np.array([np.max([np.min([k[i], N[i] - 2]), 0]) for i in range(M-1)])
 
-        print("k=", k)
+        output['ki'].append(k)
+        output['iter'] += 1
+        print(k)
         if np.all(np.abs(k - k0) <= tolerance):
-            print(f"Break before end. Iteration {i}")
-            elapsed_time = time.time() - t0
+            output['elapsed_time'] = time.time() - t0
+            output['converged'] = True
+            output['result'] = k
             break
+        elif i == maxiter-1:
+            output['elapsed_time'] = -1
+            output['converged'] = False
+            output['result'] = k
         else:
             k0 = np.copy(k)
-    return k, elapsed_time
+    return output
