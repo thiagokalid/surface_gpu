@@ -1,3 +1,4 @@
+import time
 import numpy as np
 
 
@@ -24,38 +25,83 @@ def parrilla_2007(surface, focus, transmitter, c1, c2):
             k0 = int(k)
 
 
-def Vk_profile(k0: np.ndarray, p: int, profiles: list):
-    k_past = int(k0[p-1])
-    k_post = int(k0[p+1])
-    k = int(k0[p])
-    Vk0 = tof(k, profiles[p + 1]["x"], profiles[p + 1]["z"], profiles[p]["x"][k_past], profiles[p]["z"][k_past],
-              profiles[p + 1]["c_inc"]) + \
-          tof(k, profiles[p + 1]["x"], profiles[p + 1]["z"], profiles[p + 2]["x"][k_post], profiles[p + 2]["z"][k_post],
-              profiles[p + 1]["c_ref"])
-    return Vk0
+def parrilla_generalized(x: list, z: list, xA: float, zA: float, xF: float, zF: float, c: list, tolerance: int=2):
+    N = [len(xi) for xi in x]
+    M = len(c)
+    k0 = np.zeros(M-1, dtype=int)
+    step = np.copy(k0)
+    k = k0 + 1000
+    elapsed_time = None
 
+    t0 = time.time()
+    for i in range(100):
+        for m in range(M-1):  # 0 1 2
+            if m == 0:
+                p = k0[m]
+                pn = k0[m + 1]
+                Mk = (z[m][p + 1] - z[m][p]) / (x[m][p + 1] - x[m][p])
 
-def tof_profiles(k0: np.ndarray, profiles: list, emitter: list, focus: list):
-    k = np.zeros_like(k0 + 2, dtype=int)
-    elements = emitter + profiles + focus
-    for p in range(1, len(elements) - 1):
-        Vk0 = Vk_profile(k0, p, elements)
-        post_k0 = k0 + 1
-        post_k0[0] = 0
-        post_k0[-1] = 0
-        Vk = Vk_profile(post_k0, p, elements)
-        k[p] = k0[p] - np.round(Vk0 / (Vk - Vk0))
-    return k
+                Vk0 = \
+                    1 / c[0] * ((x[m][p] - xA) + Mk * (z[m][p] - zA)) / np.sqrt(
+                        (x[m][p] - xA) ** 2 + (z[m][p] - zA) ** 2) + \
+                    1 / c[1] * ((x[m][p] - x[m + 1][pn]) + Mk * (z[m][p] - z[m + 1][pn])) / np.sqrt(
+                        (x[m][p] - x[m + 1][pn]) ** 2 + (z[m][p] - z[m + 1][pn]) ** 2)
 
+                Vk = \
+                    1 / c[0] * ((x[m][p + 1] - xA) + Mk * (z[m][p + 1] - zA)) / np.sqrt(
+                        (x[m][p + 1] - xA) ** 2 + (z[m][p + 1] - zA) ** 2) + \
+                    1 / c[1] * ((x[m][p + 1] - x[m + 1][pn]) + Mk * (z[m][p + 1] - z[m + 1][pn])) / np.sqrt(
+                        (x[m][p + 1] - x[m + 1][pn]) ** 2 + (z[m][p + 1] - z[m + 1][pn]) ** 2)
 
-def parrilla_2007_generalized(profiles: list, emitter: list, focus: list, maxiter=100):
-    k0 = np.zeros(len(profiles) + 2, dtype=int)
-    N_vector = [len(p["x"]) for p in profiles]
-    for i in range(maxiter):
-        k = tof_profiles(k0, profiles, emitter, focus)
+                step[0] = np.round(Vk0 / (Vk - Vk0))
 
-        if np.all(np.abs(k - k0) <= 1):
-            return k[1:-1]
+            elif m == M - 2:
+                p0 = k0[m - 1]
+                p = k0[m]
+                Mk = (z[m][p + 1] - z[m][p]) / (x[m][p + 1] - x[m][p])
+
+                Vk0 = \
+                    1 / c[-2] * ((x[m][p] - x[m - 1][p0]) + Mk * (z[m][p] - z[m - 1][p0])) / np.sqrt(
+                        (x[m][p] - x[m - 1][p0]) ** 2 + (z[m][p] - z[m - 1][p0]) ** 2) + \
+                    1 / c[-1] * ((x[m][p] - xF) + Mk * (z[m][p] - zF)) / np.sqrt(
+                        (x[m][p] - xF) ** 2 + (z[m][p] - zF) ** 2)
+
+                Vk = \
+                    1 / c[-2] * ((x[m][p + 1] - x[m - 1][p0]) + Mk * (z[m][p + 1] - z[m - 1][p0])) / np.sqrt(
+                        (x[m][p + 1] - x[m - 1][p0]) ** 2 + (z[m][p + 1] - z[m - 1][p0]) ** 2) + \
+                    1 / c[-1] * ((x[m][p + 1] - xF) + Mk * (z[m][p + 1] - zF)) / np.sqrt(
+                        (x[m][p + 1] - xF) ** 2 + (z[m][p + 1] - zF) ** 2)
+
+                step[-1] = np.round(Vk0 / (Vk - Vk0))
+
+            else:
+                p0 = k0[m - 1]
+                p = k0[m]
+                pn = k0[m + 1]
+                Mk = (z[m][p + 1] - z[m][p]) / (x[m][p + 1] - x[m][p])
+
+                Vk0 = \
+                    1 / c[m] * ((x[m][p] - x[m - 1][p0]) + Mk * (z[m][p] - z[m - 1][p0])) / np.sqrt(
+                        (x[m][p] - x[m - 1][p0]) ** 2 + (z[m][p] - z[m - 1][p0]) ** 2) + \
+                    1 / c[m + 1] * ((x[m][p] - x[m + 1][pn]) + Mk * (z[m][p] - z[m + 1][pn])) / np.sqrt(
+                        (x[m][p] - x[m + 1][pn]) ** 2 + (z[m][p] - z[m + 1][pn]) ** 2)
+
+                Vk = \
+                    1 / c[m] * ((x[m][p + 1] - x[m - 1][p0]) + Mk * (z[m][p + 1] - z[m - 1][p0])) / np.sqrt(
+                        (x[m][p + 1] - x[m - 1][p0]) ** 2 + (z[m][p + 1] - z[m - 1][p0]) ** 2) + \
+                    1 / c[m + 1] * ((x[m][p + 1] - x[m + 1][pn]) + Mk * (z[m][p + 1] - z[m + 1][pn])) / np.sqrt(
+                        (x[m][p + 1] - x[m + 1][pn]) ** 2 + (z[m][p + 1] - z[m + 1][pn]) ** 2)
+
+                step[m] = np.round(Vk0 / (Vk - Vk0))
+
+        k = k0 - step
+        k = np.array([np.max([np.min([k[i], N[i] - 2]), 0]) for i in range(M-1)])
+
+        print("k=", k)
+        if np.all(np.abs(k - k0) <= tolerance):
+            print(f"Break before end. Iteration {i}")
+            elapsed_time = time.time() - t0
+            break
         else:
-            k0[1:-1] = np.array([np.min([k[j+1], N_vector[j]-2]) for j in range(len(k)-2)])
-    return k[1:-1]
+            k0 = np.copy(k)
+    return k, elapsed_time
