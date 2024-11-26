@@ -26,7 +26,7 @@ def parrilla_2007(surface, focus, transmitter, c1, c2):
             k0 = int(k)
 
 
-def parrilla_generalized_interpolated(x: list, z: list, N:list, xA: float, zA: float, xF: float, zF: float, c: list, tolerance: int=2, maxiter: int=100):
+def parrilla_generalized_interpolated(x: list, z: list, N:list, xA: float, zA: float, xF: float, zF: float, c: list, tolerance: float=1e-4, maxiter: int=100, delta=1e-3):
     M = len(c)
     k0 = np.zeros(M-1, dtype=float)
     step = np.copy(k0)
@@ -47,7 +47,7 @@ def parrilla_generalized_interpolated(x: list, z: list, N:list, xA: float, zA: f
             if m == 0:
                 p = k0[m]
                 pn = k0[m + 1]
-                Mk = (z[m](p + 1) - z[m](p)) / (x[m](p + 1) - x[m](p))
+                Mk = (z[m](p + delta) - z[m](p)) / (x[m](p + delta) - x[m](p))
 
                 Vk0 = \
                     1 / c[0] * ((x[m](p) - xA) + Mk * (z[m](p) - zA)) / np.sqrt(
@@ -66,7 +66,7 @@ def parrilla_generalized_interpolated(x: list, z: list, N:list, xA: float, zA: f
             elif m == M - 2:
                 p0 = k0[m - 1]
                 p = k0[m]
-                Mk = (z[m](p + 1) - z[m](p)) / (x[m](p + 1) - x[m](p))
+                Mk = (z[m](p + delta) - z[m](p)) / (x[m](p + delta) - x[m](p))
 
                 Vk0 = \
                     1 / c[-2] * ((x[m](p) - x[m - 1](p0)) + Mk * (z[m](p) - z[m - 1](p0))) / np.sqrt(
@@ -87,7 +87,7 @@ def parrilla_generalized_interpolated(x: list, z: list, N:list, xA: float, zA: f
                 p = k0[m]
                 pn = k0[m + 1]
 
-                Mk = (z[m](p + 1) - z[m](p)) / (x[m](p + 1) - x[m](p))
+                Mk = (z[m](p + delta) - z[m](p)) / (x[m](p + delta) - x[m](p))
 
                 Vk0 = \
                     1 / c[m] * ((x[m](p) - x[m - 1](p0)) + Mk * (z[m](p) - z[m - 1](p0))) / np.sqrt(
@@ -104,12 +104,11 @@ def parrilla_generalized_interpolated(x: list, z: list, N:list, xA: float, zA: f
                 step[m] = Vk0 / (Vk - Vk0)
 
         k = k0 - step
-        k = np.array([np.max([np.min([k[i], N[i] - 2]), 0]) for i in range(M-1)])
 
         output['ki'].append(k)
         output['iter'] += 1
         #print(k)
-        if np.all(np.abs(k - k0) <= tolerance):
+        if np.linalg.norm(k - k0) <= tolerance:
             output['elapsed_time'] = time.time() - t0
             output['converged'] = True
             output['result'] = k

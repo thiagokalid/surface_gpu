@@ -23,7 +23,7 @@ xA, zA = 2.5, 0
 
 # Focuses:
 xF = 2
-zF = 15
+zF = 25
 
 # Profiles:
 x1 = x
@@ -42,9 +42,9 @@ t1 = lambda x0: np.interp(x0, x1, x1)
 t2 = lambda x0: np.interp(x0, x2, x2)
 t3 = lambda x0: np.interp(x0, x3, x3)
 
-f1 = lambda x0: np.interp(x0, x1, z1)
-f2 = lambda x0: np.interp(x0, x2, z2)
-f3 = lambda x0: np.interp(x0, x3, z3)
+f1 = lambda x0: np.sin(.25 * x0) + 5
+f2 = lambda x0: x0**2/20 + 10
+f3 = lambda x0: np.sin(.25 * x0) + 20
 
 x = [t1, t2, t3]
 z = [f1, f2, f3]
@@ -52,23 +52,27 @@ c = [c1, c2, c3, c4]
 M = len(x)
 
 
-result = parrilla_generalized_interpolated(x, z, N, xA, zA, xF, zF, c, tolerance=4, maxiter=200)
+result = parrilla_generalized_interpolated(x, z, N, xA, zA, xF, zF, c, tolerance=1e-2, maxiter=200)
 
 k = result['result']
 elapsed_time = result['elapsed_time']
 
 # Plot rays:
+tof = 0
 for i in range(M + 1):
     if i == 0:
         plt.plot([xA, x[i](k[0])], [zA, z[i](k[0])], color='lime')
+        tof += np.sqrt((xA - x[i](k[0]))**2 + (zA - z[i](k[0]))**2)/c[0]
     elif i == M:
         plt.plot([xF, x[i - 1](k[i - 1])], [zF, z[i - 1](k[i - 1])], color='lime')
+        tof += np.sqrt((xF - x[i-1](k[i-1])) ** 2 + (zF - z[i-1](k[i-1])) ** 2) / c[-1]
     else:
         plt.plot([x[i](k[i]), x[i - 1](k[i - 1])], [z[i](k[i]), z[i - 1](k[i - 1])], color='lime')
+        tof += np.sqrt((x[i](k[i]) - x[i - 1](k[i - 1])) ** 2 + (x[i](k[i]) - z[i - 1](k[i - 1])) ** 2) / c[i]
 
 # Plot surfaces:
 for i in range(M):
-    plt.plot(x[i](xdiscr[i]), z[i](xdiscr[i]), 'o-', color="b", alpha=.5, label=fr"$S_{i + 1}$. $k_{i}={k[i]}$", markersize=2)
+    plt.plot(x[i](xdiscr[i]), z[i](xdiscr[i]), 'o-', color="b", alpha=.5, label=fr"$S_{i + 1}$. $k_{i}={k[i]:.2f}$", markersize=2)
     plt.plot(x[i](k[i]), z[i](k[i]), '*', color="r")
 
 # Emitter:
@@ -84,7 +88,7 @@ plt.gca().set_aspect("equal")
 plt.grid()
 if result["converged"]:
     iterations = result["iter"]
-    plt.title(f"Converged with {iterations} iterations or {elapsed_time * 1000:.2f} ms")
+    plt.title(f"Converged with {iterations} iterations or {elapsed_time * 1000:.2f} ms."+ rf"$TOF={tof:.2f} \mu s$")
 else:
     plt.title("Has not converged.")
 plt.show()
