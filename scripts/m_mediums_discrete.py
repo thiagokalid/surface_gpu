@@ -2,7 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib
 
-from surface_gpu.methods import parrilla_generalized
+from src.surface_gpu.methods import parrilla_generalized
 matplotlib.use("TkAgg")
 
 # Speed:
