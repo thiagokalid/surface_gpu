@@ -4,7 +4,6 @@ import matplotlib
 
 from surface_gpu.methods import parrilla_generalized_interpolated
 
-matplotlib.use("TkAgg")
 
 # Speed:
 c1 = 5.9
