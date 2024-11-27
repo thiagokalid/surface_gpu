@@ -1,9 +1,8 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib
-import time
 
-from src.surface_gpu.methods import parrilla_generalized, parrilla_generalized_interpolated
+from surface_gpu.methods import parrilla_generalized_interpolated
 
 matplotlib.use("TkAgg")
 

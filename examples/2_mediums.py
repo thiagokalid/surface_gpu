@@ -3,8 +3,6 @@ import matplotlib
 matplotlib.use('TkAgg')
 import numpy as np
 
-from src.surface_gpu.methods import *
-
 if __name__ == '__main__':
     xmin = -2.5
     xmax = 2.5
