@@ -3,56 +3,43 @@
 # Compiler and linker settings
 CXX = g++
 CUDA = nvcc
-PYTHON = python3
-PYBIND11_INCLUDE = /path/to/pybind11/include  # Adjust path to PyBind11 include folder
 
 # Directories
 SRC_DIR = src
 BUILD_DIR = build
 CPP_DIR = $(SRC_DIR)/cpp
-CUDA_DIR = $(SRC_DIR)/cpp
-BINDINGS_DIR = $(SRC_DIR)/pybind
 INCLUDE_DIR = $(CPP_DIR)/include
-PYTHON_MODULES_DIR = $(SRC_DIR)/python_modules
 
-# Files
-CPP_SOURCES = $(CPP_DIR)/my_cpp_function.cpp
-CUDA_SOURCES = $(CUDA_DIR)/my_cuda_function.cu
-BINDINGS_SOURCES = $(BINDINGS_DIR)/bindings.cpp
-PYTHON_MODULE = my_module
+# Files (using wildcards to include all cpp/cuda files)
+CPP_SOURCES = $(wildcard $(CPP_DIR)/*.cpp)
+CUDA_SOURCES = $(wildcard $(CPP_DIR)/*.cu)
 
-# Output files
-LIBRARY_NAME = lib$(PYTHON_MODULE).so  # Shared library for Python bindings
-OBJ_FILES = $(CPP_SOURCES:.cpp=.o) $(CUDA_SOURCES:.cu=.o)
+# Object files (with path to build directory)
+CPP_OBJ_FILES = $(patsubst $(SRC_DIR)/cpp/%.cpp, $(BUILD_DIR)/%.o, $(CPP_SOURCES))
+CUDA_OBJ_FILES = $(patsubst $(SRC_DIR)/cpp/%.cu, $(BUILD_DIR)/%.so, $(CUDA_SOURCES))
 
-# Compiler flags
-CXX_FLAGS = -O3 -Wall -fPIC -std=c++14
-CUDA_FLAGS = -O3 --compiler-bindir=$(CXX)
-LDFLAGS = -shared -fPIC
+# Combine C++ and CUDA object files
+OBJ_FILES = $(CPP_OBJ_FILES) $(CUDA_OBJ_FILES)
 
-# Default target
-all: $(BUILD_DIR)/$(LIBRARY_NAME)
+# Compiler flags for g++ (host compiler)
+CXX_FLAGS = -O3 -Wall -fPIC -std=c++14 -I$(INCLUDE_DIR)
+# Compiler flags for nvcc (CUDA compiler)
+CUDA_FLAGS = -O3 -Xcompiler -Wall -Xcompiler -fPIC -Xcompiler -std=c++14 -I$(INCLUDE_DIR)
 
-# Rule to compile C++ sources into object files
-$(CPP_DIR)/%.o: $(CPP_DIR)/%.cpp
-	$(CXX) $(CXX_FLAGS) -I$(INCLUDE_DIR) -I$(PYBIND11_INCLUDE) -c $< -o $@
+# Default target (no linking into a shared library)
+all: $(CPP_OBJ_FILES) $(CUDA_OBJ_FILES)
 
-# Rule to compile CUDA sources into object files
-$(CUDA_DIR)/%.o: $(CUDA_DIR)/%.cu
-	$(CUDA) $(CUDA_FLAGS) -I$(INCLUDE_DIR) -I$(PYBIND11_INCLUDE) -c $< -o $@
+# Compilation rules
+$(BUILD_DIR)/%.o: $(SRC_DIR)/cpp/%.cpp
+	$(CXX) $(CXX_FLAGS) -c $< -o $@
 
-# Rule to compile Python bindings
-$(BUILD_DIR)/$(LIBRARY_NAME): $(OBJ_FILES) $(BINDINGS_SOURCES)
-	$(CXX) $(CXX_FLAGS) $(OBJ_FILES) $(BINDINGS_SOURCES) -I$(INCLUDE_DIR) -I$(PYBIND11_INCLUDE) -L$(BUILD_DIR) -o $(BUILD_DIR)/$(LIBRARY_NAME) $(LDFLAGS)
+$(BUILD_DIR)/%.so: $(SRC_DIR)/cpp/%.cu
+	$(CUDA) $(CUDA_FLAGS) $< -o $@
 
-# Clean rule to remove object files and shared library
+# Clean up
 clean:
-	rm -rf $(BUILD_DIR)/*.o $(BUILD_DIR)/$(LIBRARY_NAME)
+	rm -rf $(BUILD_DIR)/*.o $(BUILD_DIR)/*.so
 
-# Install the Python module
-install:
-	python3 setup.py install
+# Declare phony targets
+.PHONY: all clean
 
-# Running tests (if you have any test files)
-test: all
-	pytest tests/  # Adjust based on your testing setup
