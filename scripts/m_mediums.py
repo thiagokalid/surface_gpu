@@ -1,6 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib
+matplotlib.use('TkAgg')
 
 from src.surface_gpu.methods import parrilla_generalized_interpolated
 
@@ -17,7 +18,7 @@ xstep = 1e-2
 x = np.arange(xmin, xmax + xstep, xstep)
 
 # Emitters:
-xA, zA = 2.5, 0
+xA, zA = 0, 0
 
 # Focuses:
 xF = 2
@@ -50,7 +51,7 @@ c = [c1, c2, c3, c4]
 M = len(x)
 
 
-result = parrilla_generalized_interpolated(x, z, N, xA, zA, xF, zF, c, tolerance=1e-2, maxiter=200)
+result = parrilla_generalized_interpolated(x, z, xA, zA, xF, zF, c, tolerance=1e-3, maxiter=5)
 
 k = result['result']
 elapsed_time = result['elapsed_time']
@@ -86,7 +87,8 @@ plt.gca().set_aspect("equal")
 plt.grid()
 if result["converged"]:
     iterations = result["iter"]
-    plt.title(f"Converged with {iterations} iterations or {elapsed_time * 1000:.2f} ms."+ rf"$TOF={tof:.2f} \mu s$")
+    plt.title(f"Converged with {iterations} iterations or {elapsed_time * 1000:.2f} ms. " + rf"$TOF={tof:.2f} \mu s$")
 else:
-    plt.title("Has not converged.")
+    iterations = result["iter"]
+    plt.title(f"Achieved maximum number of iterations ({iterations}).\n Elapsed time: {elapsed_time * 1000:.2f} ms. " + rf"$TOF={tof:.2f} \mu s$")
 plt.show()
