@@ -4,7 +4,7 @@ import numpy as np
 from ctypes import c_float, c_int
 
 # Path to the shared library (.so file)
-lib_path = '../build/vector_add.so'
+lib_path = '../build/parrilla_generalized.so'
 
 # Load the shared library
 try:
@@ -13,27 +13,34 @@ try:
 except Exception as e:
     print(f"Error loading library: {e}")
 
-# Define argument and return types of the CUDA function
+# Define argument and return types of the CUDA function (float result, float xA, float zA, float xF, float zF, float* xS, float* zS, int N)
 # Here we define that the function 'call_cuda_function' takes three pointers to float arrays and an integer
-clib.call_cuda_function.argtypes = [ctypes.POINTER(c_float), ctypes.POINTER(c_float), ctypes.POINTER(c_float), c_int]
-clib.call_cuda_function.restype = None
-
-# Define the size of the array
-N = 1024  # Length of the arrays
+clib.parrilla_generalized.argtypes = [
+    c_float, c_float,  # xA, zA
+    c_float, c_float,  # xF, zF
+    ctypes.POINTER(c_float), ctypes.POINTER(c_float), # xS, zS (vectors)
+    c_int  # length of xS and zS
+]
+clib.parrilla_generalized.restype = c_float
 
 # Initialize input arrays
-a = np.ones(N, dtype=np.float32)
-b = np.ones(N, dtype=np.float32)
-c = np.zeros(N, dtype=np.float32)
+xA, zA = 0., 0.
+xF, zF = 0., 10.
 
-# Convert the arrays to ctypes pointers
-a_ptr = a.ctypes.data_as(ctypes.POINTER(c_float))
-b_ptr = b.ctypes.data_as(ctypes.POINTER(c_float))
-c_ptr = c.ctypes.data_as(ctypes.POINTER(c_float))
+# Linear function: f(x) = 5
+deltax = 1e-1
+xS = np.arange(-5, 5 + deltax, deltax)
+zS = xS + 5
+
+N = len(zS)
+
+#
+xS_ptr = xS.ctypes.data_as(ctypes.POINTER(ctypes.c_float))
+zS_ptr = zS.ctypes.data_as(ctypes.POINTER(ctypes.c_float))
 
 # Call the CUDA function
-clib.call_cuda_function(a_ptr, b_ptr, c_ptr, N)
+result = clib.parrilla_generalized(xA, zA, xF, zF, xS_ptr, zS_ptr, N)
 
 # Print the result (output array c)
-print("Output array:", c)
+print("Output array:", result)
 
