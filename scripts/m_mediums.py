@@ -18,7 +18,7 @@ xstep = 1e-2
 x = np.arange(xmin, xmax + xstep, xstep)
 
 # Emitters:
-xA, zA = 0, 0
+xA, zA = 2.5, 0
 
 # Focuses:
 xF = 2
@@ -51,7 +51,7 @@ c = [c1, c2, c3, c4]
 M = len(x)
 
 
-result = parrilla_generalized_interpolated(x, z, xA, zA, xF, zF, c, tolerance=1e-3, maxiter=5)
+result = parrilla_generalized_interpolated(x, z, xA, zA, xF, zF, c, tolerance=1e-3, maxiter=100)
 
 k = result['result']
 elapsed_time = result['elapsed_time']

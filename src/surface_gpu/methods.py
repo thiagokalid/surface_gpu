@@ -26,18 +26,16 @@ def parrilla_2007(surface, focus, transmitter, c1, c2):
             k0 = int(k)
 
 
-def parrilla_generalized_interpolated(x: list, z: list, xA: float, zA: float, xF: float, zF: float, c: list, tolerance: float=1e-4, maxiter: int=100, delta=1e-3):
+def parrilla_generalized_interpolated(x: list, z: list, xA: float, zA: float, xF: float, zF: float, c: list,
+                                      tolerance: float=1e-4, maxiter: int=100, delta=1e-3):
     M = len(c)
-    k0 = np.zeros(M+1, dtype=float)
-    x = [lambda x: xA, *x, lambda x: xF]
-    z = [lambda z: zA, *z, lambda z: zF]
-    step = np.zeros(M-1, dtype=float)
+    k0 = np.zeros(M-1, dtype=float)
+    step = np.copy(k0)
     k = k0 + 1000
-    elapsed_time = None
 
     output = {
         "ki": [],
-        "elapsed_time": -1.,
+        "elapsed_time": -1,
         "converged": False,
         "result": None,
         "iter": 0
@@ -45,7 +43,46 @@ def parrilla_generalized_interpolated(x: list, z: list, xA: float, zA: float, xF
 
     t0 = time.time()
     for i in range(maxiter):
-        for m in range(1, M-1):
+        for m in range(M-1):  # 0 1 2
+            if m == 0:
+                p = k0[m]
+                pn = k0[m + 1]
+                Mk = (z[m](p + delta) - z[m](p)) / (x[m](p + delta) - x[m](p))
+
+                Vk0 = \
+                    1 / c[0] * ((x[m](p) - xA) + Mk * (z[m](p) - zA)) / np.sqrt(
+                        (x[m](p) - xA) ** 2 + (z[m](p) - zA) ** 2) + \
+                    1 / c[1] * ((x[m](p) - x[m + 1](pn)) + Mk * (z[m](p) - z[m + 1](pn))) / np.sqrt(
+                        (x[m](p) - x[m + 1](pn)) ** 2 + (z[m](p) - z[m + 1](pn)) ** 2)
+
+                Vk = \
+                    1 / c[0] * ((x[m](p + 1) - xA) + Mk * (z[m](p + 1) - zA)) / np.sqrt(
+                        (x[m](p + 1) - xA) ** 2 + (z[m](p + 1) - zA) ** 2) + \
+                    1 / c[1] * ((x[m](p + 1) - x[m + 1](pn)) + Mk * (z[m](p + 1) - z[m + 1](pn))) / np.sqrt(
+                        (x[m](p + 1) - x[m + 1](pn)) ** 2 + (z[m](p + 1) - z[m + 1](pn)) ** 2)
+
+                step[0] = Vk0 / (Vk - Vk0)
+
+            elif m == M - 2:
+                p0 = k0[m - 1]
+                p = k0[m]
+                Mk = (z[m](p + delta) - z[m](p)) / (x[m](p + delta) - x[m](p))
+
+                Vk0 = \
+                    1 / c[-2] * ((x[m](p) - x[m - 1](p0)) + Mk * (z[m](p) - z[m - 1](p0))) / np.sqrt(
+                        (x[m](p) - x[m - 1](p0)) ** 2 + (z[m](p) - z[m - 1](p0)) ** 2) + \
+                    1 / c[-1] * ((x[m](p) - xF) + Mk * (z[m](p) - zF)) / np.sqrt(
+                        (x[m](p) - xF) ** 2 + (z[m](p) - zF) ** 2)
+
+                Vk = \
+                    1 / c[-2] * ((x[m](p + 1) - x[m - 1](p0)) + Mk * (z[m](p + 1) - z[m - 1](p0))) / np.sqrt(
+                        (x[m](p + 1) - x[m - 1](p0)) ** 2 + (z[m](p + 1) - z[m - 1](p0)) ** 2) + \
+                    1 / c[-1] * ((x[m](p + 1) - xF) + Mk * (z[m](p + 1) - zF)) / np.sqrt(
+                        (x[m](p + 1) - xF) ** 2 + (z[m](p + 1) - zF) ** 2)
+
+                step[-1] = Vk0 / (Vk - Vk0)
+
+            else:
                 p0 = k0[m - 1]
                 p = k0[m]
                 pn = k0[m + 1]
@@ -53,34 +90,34 @@ def parrilla_generalized_interpolated(x: list, z: list, xA: float, zA: float, xF
                 Mk = (z[m](p + delta) - z[m](p)) / (x[m](p + delta) - x[m](p))
 
                 Vk0 = \
-                    1 / c[m - 1] * ((x[m](p) - x[m - 1](p0)) + Mk * (z[m](p) - z[m - 1](p0))) / np.sqrt(
+                    1 / c[m] * ((x[m](p) - x[m - 1](p0)) + Mk * (z[m](p) - z[m - 1](p0))) / np.sqrt(
                         (x[m](p) - x[m - 1](p0)) ** 2 + (z[m](p) - z[m - 1](p0)) ** 2) + \
-                    1 / c[m] * ((x[m](p) - x[m + 1](pn)) + Mk * (z[m](p) - z[m + 1](pn))) / np.sqrt(
+                    1 / c[m + 1] * ((x[m](p) - x[m + 1](pn)) + Mk * (z[m](p) - z[m + 1](pn))) / np.sqrt(
                         (x[m](p) - x[m + 1](pn)) ** 2 + (z[m](p) - z[m + 1](pn)) ** 2)
 
                 Vk = \
-                    1 / c[m - 1] * ((x[m](p + 1) - x[m - 1](p0)) + Mk * (z[m](p + 1) - z[m - 1](p0))) / np.sqrt(
+                    1 / c[m] * ((x[m](p + 1) - x[m - 1](p0)) + Mk * (z[m](p + 1) - z[m - 1](p0))) / np.sqrt(
                         (x[m](p + 1) - x[m - 1](p0)) ** 2 + (z[m](p + 1) - z[m - 1](p0)) ** 2) + \
-                    1 / c[m] * ((x[m](p + 1) - x[m + 1](pn)) + Mk * (z[m](p + 1) - z[m + 1](pn))) / np.sqrt(
+                    1 / c[m + 1] * ((x[m](p + 1) - x[m + 1](pn)) + Mk * (z[m](p + 1) - z[m + 1](pn))) / np.sqrt(
                         (x[m](p + 1) - x[m + 1](pn)) ** 2 + (z[m](p + 1) - z[m + 1](pn)) ** 2)
 
-                step[m-1] = Vk0 / (Vk - Vk0)
+                step[m] = Vk0 / (Vk - Vk0)
 
-        k = k0[1:M] - step
+        k = k0 - step
 
         output['ki'].append(k)
         output['iter'] += 1
-        if np.linalg.norm(k - k0[1:M]) <= tolerance:
-            output['elapsed_time'] = time.time() - t0
+        #print(k)
+        if np.linalg.norm(k - k0) <= tolerance:
             output['converged'] = True
             output['result'] = k
             break
         elif i == maxiter-1:
-            output['elapsed_time'] = time.time() - t0
             output['converged'] = False
             output['result'] = k
         else:
-            k0[1:M] = np.copy(k)
+            k0 = np.copy(k)
+        output['elapsed_time'] = time.time() - t0
     return output
 
 def parrilla_generalized(x: list, z: list, xA: float, zA: float, xF: float, zF: float, c: list, tolerance: int=2, maxiter: int=100):
