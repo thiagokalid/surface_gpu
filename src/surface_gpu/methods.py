@@ -53,15 +53,15 @@ def parrilla_generalized_interpolated(x: list, z: list, xA: float, zA: float, xF
                 Mk = (z[m](p + delta) - z[m](p)) / (x[m](p + delta) - x[m](p))
 
                 Vk0 = \
-                    1 / c[m] * ((x[m](p) - x[m - 1](p0)) + Mk * (z[m](p) - z[m - 1](p0))) / np.sqrt(
+                    1 / c[m - 1] * ((x[m](p) - x[m - 1](p0)) + Mk * (z[m](p) - z[m - 1](p0))) / np.sqrt(
                         (x[m](p) - x[m - 1](p0)) ** 2 + (z[m](p) - z[m - 1](p0)) ** 2) + \
-                    1 / c[m + 1] * ((x[m](p) - x[m + 1](pn)) + Mk * (z[m](p) - z[m + 1](pn))) / np.sqrt(
+                    1 / c[m] * ((x[m](p) - x[m + 1](pn)) + Mk * (z[m](p) - z[m + 1](pn))) / np.sqrt(
                         (x[m](p) - x[m + 1](pn)) ** 2 + (z[m](p) - z[m + 1](pn)) ** 2)
 
                 Vk = \
-                    1 / c[m] * ((x[m](p + 1) - x[m - 1](p0)) + Mk * (z[m](p + 1) - z[m - 1](p0))) / np.sqrt(
+                    1 / c[m - 1] * ((x[m](p + 1) - x[m - 1](p0)) + Mk * (z[m](p + 1) - z[m - 1](p0))) / np.sqrt(
                         (x[m](p + 1) - x[m - 1](p0)) ** 2 + (z[m](p + 1) - z[m - 1](p0)) ** 2) + \
-                    1 / c[m + 1] * ((x[m](p + 1) - x[m + 1](pn)) + Mk * (z[m](p + 1) - z[m + 1](pn))) / np.sqrt(
+                    1 / c[m] * ((x[m](p + 1) - x[m + 1](pn)) + Mk * (z[m](p + 1) - z[m + 1](pn))) / np.sqrt(
                         (x[m](p + 1) - x[m + 1](pn)) ** 2 + (z[m](p + 1) - z[m + 1](pn)) ** 2)
 
                 step[m-1] = Vk0 / (Vk - Vk0)
