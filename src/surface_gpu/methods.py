@@ -8,22 +8,25 @@ def tof(k: int, x2: np.ndarray, z2: np.ndarray, x1: float, z1: float, c: float):
     return 1 / c * ((x2[k] - x1) + Mk * (z2[k] - z1)) / np.sqrt((x2[k] - x1) ** 2 + (z2[k] - z1) ** 2)
 
 
-def parrilla_2007(surface, focus, transmitter, c1, c2):
-    xf, zf = focus
-    xt, zt = transmitter
-    x1, z1 = surface
-
+def parrilla_2007(xA: float, zA: float, xF: float, zF: float, xS: np.ndarray, zS: np.ndarray, c1: float, c2: float, maxiter: int=100, epsilon: int=2):
     k0 = 0
+    N = len(xS)
 
-    for i in range(100):
-        Vk0 = tof(k0, x1, z1, xt, zt, c1) + tof(k0, x1, z1, xf, zf, c2)
-        Vk = tof(k0 + 1, x1, z1, xt, zt, c1) + tof(k0 + 1, x1, z1, xf, zf, c2)
+    for i in range(maxiter):
+        Vk0 = tof(k0, xS, zS, xA, zA, c1) + tof(k0, xS, zS, xF, zF, c2)
+        Vk = tof(k0 + 1, xS, zS, xA, zA, c1) + tof(k0 + 1, xS, zS, xF, zF, c2)
 
         k = k0 - np.round(Vk0 / (Vk - Vk0))
-        if np.abs(k - k0) <= 1:
-            return k0
+        if k >= N:
+            k = N-3
+        elif k < 0:
+            k = 0
+
+        if np.abs(k - k0) <= epsilon:
+            break
         else:
             k0 = int(k)
+    return int(k)
 
 
 def parrilla_generalized_interpolated(x: list, z: list, xA: float, zA: float, xF: float, zF: float, c: list,
