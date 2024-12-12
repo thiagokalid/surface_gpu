@@ -1,5 +1,5 @@
-#ifndef PARRILLA_GENERALIZED_H
-#define PARRILLA_GENERALIZED_H
+#ifndef PARRILLA_2007_H
+#define PARRILLA_2007_H
 
 #include <cuda_runtime.h>
 
@@ -12,9 +12,9 @@ __device__ double tof(int k, float* xS, float* zS, float x1, float z1, float c);
 __device__ int step(int k0, float xA, float zA, float xF, float zF, float* xS, float* zS, float c1, float c2);
 
 // Global kernel function to execute on the GPU
-__global__ void _parrilla_generalized(int* k_result, float* xA, float* zA, float* xF, float* zF, float* xS, float* zS, float c1, float c2, int N);
+__global__ void _parrilla_2007(int* k_result, float* xA, float* zA, float* xF, float* zF, float* xS, float* zS, float c1, float c2, int N);
 
 // Host function to call the kernel
-extern "C" int parrilla_generalized(float* xA, float* zA, float* xF, float* zF, float* xS, float* zS, float c1, float c2, int N);
+extern "C" int parrilla_2007(float* xA, float* zA, float* xF, float* zF, float* xS, float* zS, float c1, float c2, int N);
 
-#endif // PARRILLA_GENERALIZED_H
+#endif // PARRILLA_2007_H

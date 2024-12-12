@@ -6,7 +6,7 @@ from ctypes import c_float, c_int
 LIBPATH = '../build/'
 
 shared_libraries = [
-    "parrilla_generalized.so"
+    "parrilla_2007.so"
 ]
 
 for lib in shared_libraries:
@@ -17,24 +17,32 @@ for lib in shared_libraries:
         raise ImportError(f"Error loading library: {e}")
 
 
-def parrilla_2007(xA: float, zA: float, xF: float, zF: float, xS: np.ndarray, zS: np.ndarray, c1: float, c2: float, maxiter: int=100, epsilon: int=2):
+def parrilla_2007(xA: np.ndarray, zA: np.ndarray, xF: np.ndarray, zF: np.ndarray, xS: np.ndarray, zS: np.ndarray, c1: float, c2: float, maxiter: int=100, epsilon: int=2):
     # Here we define that the function 'call_cuda_function' takes three pointers to float arrays and an integer
-    clib.parrilla_generalized.argtypes = [
-        c_float, c_float,  # xA, zA
-        c_float, c_float,  # xF, zF
+    clib.parrilla_2007.argtypes = [
+        ctypes.POINTER(c_float), ctypes.POINTER(c_float),  # xA, zA (vectors)
+        ctypes.POINTER(c_float), ctypes.POINTER(c_float),  # xF, zF (vectors)
         ctypes.POINTER(c_float), ctypes.POINTER(c_float),  # xS, zS (vectors)
         c_float, c_float,  # c1, c2
-        c_int,  # length of xS and zS
+        c_int, c_int, c_int,  # length of xA, xF, xS
         c_int, c_int  # maxIter and epsilon
     ]
-    clib.parrilla_generalized.restype = c_int
+    clib.parrilla_2007.restype = ctypes.POINTER(c_int)
 
     xS_ptr = xS.ctypes.data_as(ctypes.POINTER(ctypes.c_float))
     zS_ptr = zS.ctypes.data_as(ctypes.POINTER(ctypes.c_float))
 
+    xA_ptr = xA.ctypes.data_as(ctypes.POINTER(ctypes.c_float))
+    zA_ptr = zA.ctypes.data_as(ctypes.POINTER(ctypes.c_float))
+
+    xF_ptr = xF.ctypes.data_as(ctypes.POINTER(ctypes.c_float))
+    zF_ptr = zF.ctypes.data_as(ctypes.POINTER(ctypes.c_float))
+
     N = len(xS)
+    Na = len(xA)
+    Nf = len(xF)
 
     # Call the CUDA function
-    k = clib.parrilla_generalized(xA, zA, xF, zF, xS_ptr, zS_ptr, c1, c2, N, maxiter, epsilon)
-
-    return int(k)
+    k_vector = clib.parrilla_2007(xA_ptr, zA_ptr, xF_ptr, zF_ptr, xS_ptr, zS_ptr, c1, c2, Na, Nf, N, maxiter, epsilon)
+    k = np.ctypeslib.as_array(k_vector, shape=(Na, Nf))
+    return k

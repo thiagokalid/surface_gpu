@@ -15,9 +15,10 @@ def parrilla_2007(xA: float, zA: float, xF: float, zF: float, xS: np.ndarray, zS
     for i in range(maxiter):
         Vk0 = tof(k0, xS, zS, xA, zA, c1) + tof(k0, xS, zS, xF, zF, c2)
         Vk = tof(k0 + 1, xS, zS, xA, zA, c1) + tof(k0 + 1, xS, zS, xF, zF, c2)
+        istep = np.round(Vk0 / (Vk - Vk0))
 
-        k = k0 - np.round(Vk0 / (Vk - Vk0))
-        if k >= N:
+        k = k0 - istep
+        if k >= N-2:
             k = N-3
         elif k < 0:
             k = 0
@@ -27,7 +28,6 @@ def parrilla_2007(xA: float, zA: float, xF: float, zF: float, xS: np.ndarray, zS
         else:
             k0 = int(k)
     return int(k)
-
 
 def parrilla_generalized_interpolated(x: list, z: list, xA: float, zA: float, xF: float, zF: float, c: list,
                                       tolerance: float=1e-4, maxiter: int=100, delta=1e-3):
