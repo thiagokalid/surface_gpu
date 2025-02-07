@@ -3,7 +3,7 @@ import ctypes
 import numpy as np
 from ctypes import c_float, c_int
 
-LIBPATH = '../build/'
+LIBPATH = '../bin/'
 
 shared_libraries = [
     "parrilla_2007.so"
