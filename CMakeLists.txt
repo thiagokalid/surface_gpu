@@ -25,7 +25,7 @@ set(CUDA_FLAGS
 set(SRC_DIR src)
 set(CPP_DIR ${SRC_DIR}/cpp)
 set(INCLUDE_DIR ${CPP_DIR}/include)
-set(BUILD_DIR build)
+set(BUILD_DIR bin)
 
 # Create build file
 # Ensure the build directory exists
@@ -87,6 +87,7 @@ add_custom_target(clean_build
     COMMAND ${CMAKE_COMMAND} -E remove ${CMAKE_BINARY_DIR}/cmake_install.cmake
     COMMAND ${CMAKE_COMMAND} -E remove ${CMAKE_BINARY_DIR}/Makefile
     COMMAND ${CMAKE_COMMAND} -E remove_directory ${CMAKE_BINARY_DIR}/build
+    COMMAND ${CMAKE_COMMAND} -E remove_directory ${CMAKE_BINARY_DIR}/bin
     COMMENT "Cleaning all build-related files except CMakeLists.txt"
 )
 
