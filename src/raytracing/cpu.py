@@ -3,19 +3,37 @@ import numpy as np
 
 __all__ = ["parrilla_2007"]
 
-def tof(k: int, x2: np.ndarray, z2: np.ndarray, x1: float, z1: float, c: float):
-    Mk = (z2[k + 1] - z2[k]) / (x2[k + 1] - x2[k])
+def lin_interp(x0, xf, y0, yf, x):
+    if x > xf:
+        return yf
+    elif x < x0:
+        return y0
+    else:
+        return  (yf - y0)/(x0 - xf) * x
+
+def compute_Mk(kfloat: float, x2: np.ndarray, z2: np.ndarray, delta: float):
+    k = int(np.round(kfloat))
+    xk_delta = x2[k] + delta
+    zk_delta = lin_interp(x0=x2[k], xf=x2[k+1], y0=z2[k], yf=z2[k+1], x=xk_delta)
+    Mk = (zk_delta - z2[k]) / (xk_delta - x2[k])
+    return Mk
+
+
+def tof(kfloat: float, x2: np.ndarray, z2: np.ndarray, x1: float, z1: float, c: float, Mk: float):
+    # Mk = (z[m](p + delta) - z[m](p)) / (x[m](p + delta) - x[m](p))
+    k = int(np.round(kfloat))
     return 1 / c * ((x2[k] - x1) + Mk * (z2[k] - z1)) / np.sqrt((x2[k] - x1) ** 2 + (z2[k] - z1) ** 2)
 
 
-def parrilla_2007(xA: float, zA: float, xF: float, zF: float, xS: np.ndarray, zS: np.ndarray, c1: float, c2: float, maxiter: int=100, epsilon: int=2):
+def parrilla_2007(xA: float, zA: float, xF: float, zF: float, xS: np.ndarray, zS: np.ndarray, c1: float, c2: float, maxiter: int=100, epsilon: int=2, xstep: float= 1):
     k0 = 0
     N = len(xS)
 
     for i in range(maxiter):
-        Vk0 = tof(k0, xS, zS, xA, zA, c1) + tof(k0, xS, zS, xF, zF, c2)
-        Vk = tof(k0 + 1, xS, zS, xA, zA, c1) + tof(k0 + 1, xS, zS, xF, zF, c2)
-        istep = np.round(Vk0 / (Vk - Vk0))
+        Mk = compute_Mk(k0, xS, zS, xstep)
+        Vk0 = tof(k0, xS, zS, xA, zA, c1, Mk) + tof(k0, xS, zS, xF, zF, c2, Mk)
+        Vk = tof(k0 + 1, xS, zS, xA, zA, c1, Mk) + tof(k0 + 1, xS, zS, xF, zF, c2, Mk)
+        istep = Vk0 / (Vk - Vk0)
 
         k = k0 - istep
         if k >= N-2:
@@ -26,10 +44,10 @@ def parrilla_2007(xA: float, zA: float, xF: float, zF: float, xS: np.ndarray, zS
         if np.abs(k - k0) <= epsilon:
             break
         else:
-            k0 = int(k)
+            k0 = k
     return int(k)
 
-def parrilla_generalized_interpolated(x: list, z: list, xA: float, zA: float, xF: float, zF: float, c: list, tolerance: float=1e-4, maxiter: int=100, delta=1e-3):
+def parrilla_adapted(x: list, z: list, xA: float, zA: float, xF: float, zF: float, c: list, tolerance: float=1e-4, maxiter: int=100, delta=1e-3):
     M = len(c)
     k0 = np.zeros(M-1, dtype=float)
     step = np.copy(k0)
@@ -122,7 +140,7 @@ def parrilla_generalized_interpolated(x: list, z: list, xA: float, zA: float, xF
         output['elapsed_time'] = time.time() - t0
     return output
 
-def parrilla_adapted_cpu(x: list, z:list, xA_vec:list, zA_vec:list, xF_vec:list, zF_vec:list, c: list, tolerance: float=1e-4, maxiter: int=100, delta=1e-3):
+def parrilla_adapted_batch(x: list, z:list, xA_vec:list, zA_vec:list, xF_vec:list, zF_vec:list, c: list, tolerance: float=1e-4, maxiter: int=100, delta=1e-3):
     Nt, Nf = len(xA_vec), len(xF_vec)
     solutions = []
 
@@ -134,6 +152,6 @@ def parrilla_adapted_cpu(x: list, z:list, xA_vec:list, zA_vec:list, xF_vec:list,
         xA, zA = xA_vec[t], zA_vec[t]
         xF, zF = xF_vec[f], zF_vec[f]
 
-        solutions.append(parrilla_generalized_interpolated(x, z, xA, zA, xF, zF, c, maxiter=5))
+        solutions.append(parrilla_adapted(x, z, xA, zA, xF, zF, c, maxiter=5))
     elapsed_time = time.time() - t0
     return solutions, elapsed_time
