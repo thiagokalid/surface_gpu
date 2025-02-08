@@ -5,36 +5,53 @@
 #define BLOCK_SIZE 32
 
 extern "C" {
+    // Device function to compute the linear interpolation at point x
+    __device__ double _lin_interp(float x0, float xf, float y0, float yf, float x) {
+        if (x > xf){
+            return yf;
+        } else if (x < x0){
+            return y0;
+        } else {
+            return  (yf - y0)/(x0 - xf) * x;
+        }
+    }
+
+    // Device function to compute the derivative at point x[k] + xstep
+    __device__ double _compute_Mk(int k, float* xS, float* zS) {
+        double delta = 0.1;
+        double xk_delta = xS[k] + delta;
+        double zk_delta = _lin_interp(xS[k], xS[k+1], zS[k], zS[k+1], xk_delta);
+        return (zk_delta - zS[k]) / (xk_delta - xS[k]);
+    }
 
     // Device function to calculate the value of tof
-    __device__ double tof(int k, float* xS, float* zS, float x1, float z1, float c) {
-        // Calculate Mk
-        double Mk = (zS[k + 1] - zS[k]) / (xS[k + 1] - xS[k]);
-
+    __device__ double tof(int k, float* xS, float* zS, float x1, float z1, float c, float Mk) {
         // Return the result
         return (1 / c) * ((xS[k] - x1) + Mk * (zS[k] - z1)) / sqrt(pow(xS[k] - x1, 2) + pow(zS[k] - z1, 2));
     }
 
     // Device function to compute the step
-    __device__ int step(int k0, float xA, float zA, float xF, float zF, float* xS, float* zS, float c1, float c2) {
+    __device__ double step(float k_float, float xA, float zA, float xF, float zF, float* xS, float* zS, float c1, float c2) {
         // Compute Vk0 and Vk using the tof function
-        double Vk0 = tof(k0, xS, zS, xA, zA, c1) + tof(k0, xS, zS, xF, zF, c2);
-        double Vk = tof(k0 + 1, xS, zS, xA, zA, c1) + tof(k0 + 1, xS, zS, xF, zF, c2);
+        int k0 = round(k_float);
+        double Mk = _compute_Mk(k0, xS, zS);
+        double Vk0 = tof(k0, xS, zS, xA, zA, c1, Mk) + tof(k0, xS, zS, xF, zF, c2, Mk);
+        double Vk = tof(k0 + 1, xS, zS, xA, zA, c1, Mk) + tof(k0 + 1, xS, zS, xF, zF, c2, Mk);
 
         // The step difference is simply the difference between Vk and Vk0
-        return round(Vk0 / (Vk - Vk0));
+        return Vk0 / (Vk - Vk0);
     }
 
     // Global kernel function
-    __global__ void _parrilla_2007(int* d_k, float* d_xA, float* d_zA, float* d_xF, float* d_zF, float* xS, float* zS, float c1, float c2, int Na, int Nf, int N, int maxIter, int epsilon) {
+    __global__ void _parrilla_2007(int* d_k, float* d_xA, float* d_zA, float* d_xF, float* d_zF, float* xS, float* zS, float c1, float c2, int Na, int Nf, int N, int maxIter, float tolerance) {
         // Compute position that this thread is responsible for
         int c = blockIdx.y * blockDim.y + threadIdx.y;
         int r = blockIdx.x * blockDim.x + threadIdx.x;
 
         // Solver parameters:
         bool converged = false;
-        int k0 = 0;
-        int k;
+        float k0 = 0;
+        float k;
 
 
         // Newton-Raphson method:
@@ -46,8 +63,7 @@ extern "C" {
 
             for (int i = 0; i < maxIter; i++) {
                 // Newton-step:
-                // int istep = step(k0, xA, zA, xF, zF, xS, zS, c1, c2)
-                int istep = step(k0, xA, zA, xF, zF, xS, zS, c1, c2);
+                double istep = step(k0, xA, zA, xF, zF, xS, zS, c1, c2);
 
                 k = k0 - istep;
 
@@ -58,23 +74,20 @@ extern "C" {
                     k = N - 3;
                 }
 
-                //printf("k = %d, k0 = %d; step = %d; abs(k - k0) = %d\n", k, k0, istep, abs(k - k0));
-
                 // Check stopping criteria
-                if (abs(k - k0) <= epsilon) {
+                if (abs(k - k0) <= tolerance) {
                     converged = true;
                     break;
                 }
                 k0 = k;
             }
             int idx = c + r * Nf;
-            //printf("%d\n", idx);
-            d_k[idx] = k;
+            d_k[idx] = round(k);
         }
     }
 
     // Host function to call the kernel
-    int* parrilla_2007(float* xA, float* zA, float* xF, float* zF, float* xS, float* zS, float c1, float c2, int Na, int Nf, int N, int maxIter, int epsilon) {
+    int* parrilla_2007(float* xA, float* zA, float* xF, float* zF, float* xS, float* zS, float c1, float c2, int Na, int Nf, int N, int maxIter, float tolerance) {
         float *d_xS, *d_zS, *d_xF, *d_zF, *d_xA, *d_zA;
 
         int *d_k;
@@ -102,14 +115,14 @@ extern "C" {
         // Create as many blocks as necessary to map all of C
         int X = ceilf(Na/(float)BLOCK_SIZE);
         int Y = ceilf(Nf/(float)BLOCK_SIZE);
-        printf("X = %d \n", X);
-        printf("Y = %d \n", Y);
+        // printf("X = %d \n", X);
+        // printf("Y = %d \n", Y);
 
         dim3 gridDim(X, Y, 1);
         dim3 blockDim(BLOCK_SIZE, BLOCK_SIZE, 1);
 
         // Call the kernel
-        _parrilla_2007<<<gridDim, blockDim>>>(d_k, d_xA, d_zA, d_xF, d_zF, d_xS, d_zS, c1, c2, Na, Nf, N, maxIter, epsilon);
+        _parrilla_2007<<<gridDim, blockDim>>>(d_k, d_xA, d_zA, d_xF, d_zF, d_xS, d_zS, c1, c2, Na, Nf, N, maxIter, tolerance);
 
         // Check for any kernel errors
         cudaError_t error = cudaGetLastError();

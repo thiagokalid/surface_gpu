@@ -11,29 +11,29 @@ def lin_interp(x0, xf, y0, yf, x):
     else:
         return  (yf - y0)/(x0 - xf) * x
 
-def compute_Mk(kfloat: float, x2: np.ndarray, z2: np.ndarray, delta: float):
-    k = int(np.round(kfloat))
+def compute_Mk(k: int, x2: np.ndarray, z2: np.ndarray):
+    delta = .1
     xk_delta = x2[k] + delta
     zk_delta = lin_interp(x0=x2[k], xf=x2[k+1], y0=z2[k], yf=z2[k+1], x=xk_delta)
     Mk = (zk_delta - z2[k]) / (xk_delta - x2[k])
     return Mk
 
 
-def tof(kfloat: float, x2: np.ndarray, z2: np.ndarray, x1: float, z1: float, c: float, Mk: float):
-    # Mk = (z[m](p + delta) - z[m](p)) / (x[m](p + delta) - x[m](p))
-    k = int(np.round(kfloat))
+def tof(k: int, x2: np.ndarray, z2: np.ndarray, x1: float, z1: float, c: float, Mk: float):
     return 1 / c * ((x2[k] - x1) + Mk * (z2[k] - z1)) / np.sqrt((x2[k] - x1) ** 2 + (z2[k] - z1) ** 2)
 
 
-def parrilla_2007(xA: float, zA: float, xF: float, zF: float, xS: np.ndarray, zS: np.ndarray, c1: float, c2: float, maxiter: int=100, epsilon: int=2, xstep: float= 1):
+def parrilla_2007(xA: float, zA: float, xF: float, zF: float, xS: np.ndarray, zS: np.ndarray, c1: float, c2: float, maxiter: int=100, tolerance: float=1e-4):
     k0 = 0
     N = len(xS)
 
     for i in range(maxiter):
-        Mk = compute_Mk(k0, xS, zS, xstep)
+        k0 = int(np.round(k0))
+        Mk = compute_Mk(k0, xS, zS)
         Vk0 = tof(k0, xS, zS, xA, zA, c1, Mk) + tof(k0, xS, zS, xF, zF, c2, Mk)
         Vk = tof(k0 + 1, xS, zS, xA, zA, c1, Mk) + tof(k0 + 1, xS, zS, xF, zF, c2, Mk)
         istep = Vk0 / (Vk - Vk0)
+
 
         k = k0 - istep
         if k >= N-2:
@@ -41,7 +41,9 @@ def parrilla_2007(xA: float, zA: float, xF: float, zF: float, xS: np.ndarray, zS
         elif k < 0:
             k = 0
 
-        if np.abs(k - k0) <= epsilon:
+        # print(f"k = {k:.4f}, k0 = {k0:.4f}; step = {istep:.4f}; np.abs(k - k0) = {np.abs(k - k0):.4f}")
+
+        if np.abs(k - k0) <= tolerance:
             break
         else:
             k0 = k
