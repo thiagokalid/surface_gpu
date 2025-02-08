@@ -26,7 +26,7 @@ extern "C" {
     }
 
     // Global kernel function
-    __global__ void _parrilla_generalized(int* d_k, float* d_xA, float* d_zA, float* d_xF, float* d_zF, float* xS, float* zS, float c1, float c2, int Na, int Nf, int N, int maxIter, int epsilon) {
+    __global__ void _parrilla_adapted(int* d_k, float* d_xA, float* d_zA, float* d_xF, float* d_zF, float* xS, float* zS, float c1, float c2, int Na, int Nf, int N, int maxIter, int epsilon) {
         // Compute position that this thread is responsible for
         int c = blockIdx.y * blockDim.y + threadIdx.y;
         int r = blockIdx.x * blockDim.x + threadIdx.x;
@@ -73,13 +73,13 @@ extern "C" {
                 k0 = k;
             }
             int idx = c + r * Nf;
-            printf("%d\n", idx);
+            //printf("%d\n", idx);
             d_k[idx] = k;
         }
     }
 
     // Host function to call the kernel
-    int* parrilla_generalized(float* xA, float* zA, float* xF, float* zF, float* xS, float* zS, float c1, float c2, int Na, int Nf, int N, int maxIter, int epsilon) {
+    int* parrilla_adapted(float* xA, float* zA, float* xF, float* zF, float* xS, float* zS, float c1, float c2, int Na, int Nf, int N, int maxIter, int epsilon) {
         float *d_xS, *d_zS, *d_xF, *d_zF, *d_xA, *d_zA;
 
         int *d_k;
@@ -114,7 +114,7 @@ extern "C" {
         dim3 blockDim(BLOCK_SIZE, BLOCK_SIZE, 1);
 
         // Call the kernel
-        _parrilla_generalized<<<gridDim, blockDim>>>(d_k, d_xA, d_zA, d_xF, d_zF, d_xS, d_zS, c1, c2, Na, Nf, N, maxIter, epsilon);
+        _parrilla_adapted<<<gridDim, blockDim>>>(d_k, d_xA, d_zA, d_xF, d_zF, d_xS, d_zS, c1, c2, Na, Nf, N, maxIter, epsilon);
 
         // Check for any kernel errors
         cudaError_t error = cudaGetLastError();

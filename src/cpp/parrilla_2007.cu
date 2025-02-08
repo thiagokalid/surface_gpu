@@ -44,11 +44,6 @@ extern "C" {
             double xF = d_xF[c];
             double zF = d_zF[c];
 
-
-            printf("row = %d; col = %d \n", r, c);
-            //printf("xA, zA = (%f, %f)\n", xA, zA);
-            //printf("xF, zF = (%f, %f)\n", xF, zF);
-            //printf("xS, zS = (%f, %f)\n", xS[25], zS[25]);
             for (int i = 0; i < maxIter; i++) {
                 // Newton-step:
                 // int istep = step(k0, xA, zA, xF, zF, xS, zS, c1, c2)
@@ -73,7 +68,7 @@ extern "C" {
                 k0 = k;
             }
             int idx = c + r * Nf;
-            printf("%d\n", idx);
+            //printf("%d\n", idx);
             d_k[idx] = k;
         }
     }

@@ -6,7 +6,8 @@ from ctypes import c_float, c_int
 LIBPATH = '../bin/'
 
 shared_libraries = [
-    "parrilla_2007.so"
+    "parrilla_2007.so",
+    "parrilla_adapted.so"
 ]
 
 for lib in shared_libraries:
@@ -46,3 +47,7 @@ def parrilla_2007(xA: np.ndarray, zA: np.ndarray, xF: np.ndarray, zF: np.ndarray
     k_vector = clib.parrilla_2007(xA_ptr, zA_ptr, xF_ptr, zF_ptr, xS_ptr, zS_ptr, c1, c2, Na, Nf, N, maxiter, epsilon)
     k = np.ctypeslib.as_array(k_vector, shape=(Na, Nf))
     return k
+
+
+def parrilla_adapted(xA: np.ndarray, zA: np.ndarray, xF: np.ndarray, zF: np.ndarray, xS: np.ndarray, zS: np.ndarray, c: np.ndarray, maxiter: int=100, epsilon: int=2):
+    return 0.0
