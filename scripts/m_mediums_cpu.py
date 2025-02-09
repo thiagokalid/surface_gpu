@@ -6,7 +6,7 @@ from plotly.matplotlylib.mpltools import convert_x_domain
 
 matplotlib.use('TkAgg')
 
-from src.raytracing.cpu import parrilla_adapted_batch
+from src.us_raytracing.cpu import parrilla_adapted_batch
 
 
 # Speed:

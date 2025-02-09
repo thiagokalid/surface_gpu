@@ -20,8 +20,8 @@ import matplotlib.pyplot as plt
 import time
 from multiprocessing import Pool, cpu_count
 
-import src.raytracing.gpu as gpu
-import src.raytracing.cpu as cpu
+import src.us_raytracing.gpu as gpu
+import src.us_raytracing.cpu as cpu
 
 if True:
     import matplotlib
