@@ -1,9 +1,9 @@
 import time
 import numpy as np
 
-__all__ = ["parrilla_2007"]
+__all__ = ["parrilla_2007", "parrilla_adapted", "parrilla_adapted_batch"]
 
-def lin_interp(x0, xf, y0, yf, x):
+def _lin_interp(x0, xf, y0, yf, x):
     if x > xf:
         return yf
     elif x < x0:
@@ -11,10 +11,10 @@ def lin_interp(x0, xf, y0, yf, x):
     else:
         return  (yf - y0)/(x0 - xf) * x
 
-def compute_Mk(k: int, x2: np.ndarray, z2: np.ndarray):
+def _compute_Mk(k: int, x2: np.ndarray, z2: np.ndarray):
     delta = .1
     xk_delta = x2[k] + delta
-    zk_delta = lin_interp(x0=x2[k], xf=x2[k+1], y0=z2[k], yf=z2[k+1], x=xk_delta)
+    zk_delta = _lin_interp(x0=x2[k], xf=x2[k + 1], y0=z2[k], yf=z2[k + 1], x=xk_delta)
     Mk = (zk_delta - z2[k]) / (xk_delta - x2[k])
     return Mk
 
@@ -29,7 +29,7 @@ def parrilla_2007(xA: float, zA: float, xF: float, zF: float, xS: np.ndarray, zS
 
     for i in range(maxiter):
         k0 = int(np.round(k0))
-        Mk = compute_Mk(k0, xS, zS)
+        Mk = _compute_Mk(k0, xS, zS)
         Vk0 = tof(k0, xS, zS, xA, zA, c1, Mk) + tof(k0, xS, zS, xF, zF, c2, Mk)
         Vk = tof(k0 + 1, xS, zS, xA, zA, c1, Mk) + tof(k0 + 1, xS, zS, xF, zF, c2, Mk)
         istep = Vk0 / (Vk - Vk0)

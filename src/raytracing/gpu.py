@@ -3,11 +3,12 @@ import ctypes
 import numpy as np
 from ctypes import c_float, c_int
 
+__all__ = ["parrilla_2007"]
+
 LIBPATH = '../bin/'
 
 shared_libraries = [
-    "parrilla_2007.so",
-    "nested_list.so"
+    "parrilla_2007.so"
 ]
 
 lib = {}
@@ -49,43 +50,3 @@ def parrilla_2007(xA: np.ndarray, zA: np.ndarray, xF: np.ndarray, zF: np.ndarray
     k_vector = clib.parrilla_2007(xA_ptr, zA_ptr, xF_ptr, zF_ptr, xS_ptr, zS_ptr, c1, c2, Na, Nf, N, maxiter, tolerance)
     k = np.ctypeslib.as_array(k_vector, shape=(Na, Nf))
     return k
-
-
-def parrilla_adapted(xA: np.ndarray, zA: np.ndarray, xF: np.ndarray, zF: np.ndarray, xS: np.ndarray, zS: np.ndarray, c: np.ndarray, maxiter: int=100, epsilon: int=2):
-    return 0.0
-
-
-def nested_list(x: list):
-    # Define function argument types
-    clib = lib["nested_list.so"]
-    clib.printNestedList.argtypes = [ctypes.POINTER(ctypes.POINTER(ctypes.c_float)),
-                                    ctypes.POINTER(ctypes.c_float),
-                                    ctypes.c_float]
-
-    c_array, c_sizes, c_rows = convert_to_c_array(x)
-    print(c_sizes)
-
-    clib.printNestedList(c_array, c_sizes, c_rows)
-
-    return None
-
-
-def convert_to_c_array(nested_list: list):
-    row_count = len(nested_list)
-
-    # Create an array of sizes
-    sizes = (ctypes.c_float * row_count)(*map(len, nested_list))
-
-    arrays = []
-    for row in nested_list:
-        # Create a ctypes array for each row
-        row_array = (ctypes.c_float * len(row))(*row)
-        arrays.append(row_array)
-
-    # Create an array of pointers.
-    # Use ctypes.cast to convert each array to a pointer to c_float
-    arr_pointers = (ctypes.POINTER(ctypes.c_float) * row_count)(
-        *[ctypes.cast(a, ctypes.POINTER(ctypes.c_float)) for a in arrays]
-    )
-
-    return arr_pointers, sizes, row_count

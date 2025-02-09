@@ -6,7 +6,7 @@ from plotly.matplotlylib.mpltools import convert_x_domain
 
 matplotlib.use('TkAgg')
 
-from src.raytracing.cpu import parrilla_adapted_cpu
+from src.raytracing.cpu import parrilla_adapted_batch
 
 
 # Speed:
@@ -50,7 +50,7 @@ c = [c1, c2, c3]
 M = len(x)
 
 Nt, Nf = len(xA_vec), len(xF_vec)
-solutions_cpu, elapsed_time_cpu = parrilla_adapted_cpu(x, z, xA_vec, zA_vec, xF_vec, zF_vec, c)
+solutions_cpu, elapsed_time_cpu = parrilla_adapted_batch(x, z, xA_vec, zA_vec, xF_vec, zF_vec, c)
 
 # Plot rays:
 tof = 0
