@@ -30,19 +30,19 @@ if True:
 #%%
 # User-input section:
 # Speed:
-c1 = 5.9
-c2 = 1.483
+c1 = 1.483
+c2 = 5.9
 
 # Emitters:
-Nel = 1
+Nel = 64
 xA = np.arange(0, Nel, dtype=np.float32) * 1e-2
 xA -= np.mean(xA)
 zA = np.zeros_like(xA, dtype=np.float32)
 
 # Focuses:
 XX, ZZ = np.meshgrid(
-    np.linspace(0, 5, 5, dtype=np.float32),
-    np.linspace(15, 20, 5, dtype=np.float32)
+    np.linspace(2, 7, 1, dtype=np.float32),
+    np.linspace(15, 20, 1, dtype=np.float32)
 )
 
 xF, zF = XX.ravel(), ZZ.ravel()
@@ -114,7 +114,7 @@ speed-up (CPU-parallel / GPU): {elapsed_time_cpu_parallel/elapsed_time_gpu:.2f} 
 # %%
 # Plot result:
 if Na * Nf <= 100:
-    plt.figure(figsize=(12, 8))
+    plt.figure(figsize=(8, 4))
     plt.plot(xA, zA, "ks", label="Emitters", markersize=5)
     plt.plot(xF, zF, "or", label="Focuses", markersize=5)
     plt.plot(xS, zS, "o-k", markersize=1, linewidth=1, alpha=.8)
@@ -134,4 +134,6 @@ if Na * Nf <= 100:
             plt.plot(xS[k_cpu[a, f]], zS[k_cpu[a, f]], 'sr')
             plt.plot(xS[k_gpu[a, f]], zS[k_gpu[a, f]], 'sg')
     plt.legend()
+    plt.xlabel("x-axis in mm")
+    plt.ylabel("z-axis in mm")
     plt.show()
